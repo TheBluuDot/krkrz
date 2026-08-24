@@ -23,6 +23,7 @@ public:
 	tjs_int GetAscentHeight();
 	tTVPCharacterData* GetBitmap( const tTVPFontAndCharacterData & font, tjs_int aofsx, tjs_int aofsy );
 	void GetGlyphDrawRect( const ttstr & text, struct tTVPRect& area );
+	bool ShapeText( const ttstr & text, std::vector<tTVPShapedGlyph> & glyphs ) override;
 };
 
 #endif // __FREE_TYPE_FONT_RASTERIZER_H__

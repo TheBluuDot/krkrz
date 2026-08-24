@@ -295,7 +295,7 @@ static tTVPCharacterData * TVPGetCharacter(const tTVPFontAndCharacterData & font
 
 	// look prerendered font
 	const tTVPPrerenderedCharacterItem *pitem = NULL;
-	if(pfont)
+	if(pfont && !font.GlyphIndexMode)
 		pitem = pfont->Find(font.Character);
 
 	if(pitem)
@@ -1462,8 +1462,15 @@ void tTVPNativeBaseBitmap::DrawTextMultiple(const tTVPRect &destrect,
 	std::vector<tTVPCharacterDrawData> drawdata;
 	drawdata.reserve(text.GetLen());
 
+	// complex text layout: shape the logical string into visual-order
+	// glyphs (bidi + harfbuzz/graphite2 through libraqm)
+	std::vector<tTVPShapedGlyph> shaped_glyphs;
+	bool shaped = false;
+	if(Font.Angle == 0)
+		shaped = GetCurrentRasterizer()->ShapeText( text, shaped_glyphs );
+
 	// prepare all drawn characters
-	while(*p) // while input string is remaining
+	while(!shaped && *p) // while input string is remaining (legacy per-character path)
 	{
 		font.Character = *p;
 
@@ -1530,6 +1537,65 @@ void tTVPNativeBaseBitmap::DrawTextMultiple(const tTVPRect &destrect,
 		if(shadow) shadow->Release();
 
 		p++;
+	}
+
+	// shaped glyph path: iterate visual-order glyphs from the shaper
+	if(shaped)
+	{
+		for(std::vector<tTVPShapedGlyph>::const_iterator sgi = shaped_glyphs.begin();
+			sgi != shaped_glyphs.end(); sgi++)
+		{
+			font.GlyphIndexMode = true;
+			font.GlyphIndex = sgi->GlyphIndex;
+			font.ShapedCellIncX = sgi->CellIncX;
+			font.ShapedCellIncY = sgi->CellIncY;
+			font.ShapedOfsX = sgi->OfsX;
+			font.ShapedOfsY = sgi->OfsY;
+			font.Blured = false;
+			tTVPCharacterData * data = NULL;
+			tTVPCharacterData * shadow = NULL;
+			try
+			{
+				data = TVPGetCharacter(font, this, NULL, AscentOfsX, AscentOfsY);
+
+				if(data)
+				{
+					if(shlevel != 0)
+					{
+						if(shlevel == 255 && shwidth == 0)
+						{
+							// normal shadow: same character data
+							shadow = data;
+							shadow->AddRef();
+						}
+						else
+						{
+							// blured shadow
+							font.Blured = true;
+							shadow =
+								TVPGetCharacter(font, this, NULL, AscentOfsX, AscentOfsY);
+						}
+					}
+
+					if(data->BlackBoxX != 0 && data->BlackBoxY != 0)
+					{
+						drawdata.push_back(tTVPCharacterDrawData(data, shadow, x, y));
+					}
+
+					// step to the next glyph position
+					x += data->Metrics.CellIncX;
+					if(data->Metrics.CellIncY != 0) y += data->Metrics.CellIncY;
+				}
+			}
+			catch(...)
+			{
+				if(data) data->Release();
+				if(shadow) shadow->Release();
+				throw;
+			}
+			if(data) data->Release();
+			if(shadow) shadow->Release();
+		}
 	}
 
 	// draw shadows first
@@ -1614,14 +1680,25 @@ void tTVPNativeBaseBitmap::GetTextSize(const ttstr & text)
 		else
 		{
 			tjs_uint width = 0;
-			const tjs_char *buf = text.c_str();
 
-			while(*buf)
+			std::vector<tTVPShapedGlyph> shaped_glyphs;
+			if(Font.Angle == 0 && GetCurrentRasterizer()->ShapeText( text, shaped_glyphs ))
 			{
-				tjs_int w, h;
-				GetCurrentRasterizer()->GetTextExtent( *buf, w, h );
-				width += w;
-				buf++;
+				// complex layout: total advance of the shaped run
+				for(std::vector<tTVPShapedGlyph>::const_iterator sgi = shaped_glyphs.begin();
+					sgi != shaped_glyphs.end(); sgi++)
+					width += sgi->CellIncX;
+			}
+			else
+			{
+				const tjs_char *buf = text.c_str();
+				while(*buf)
+				{
+					tjs_int w, h;
+					GetCurrentRasterizer()->GetTextExtent( *buf, w, h );
+					width += w;
+					buf++;
+				}
 			}
 			TextWidth = width;
 			TextHeight = std::abs(Font.Height);

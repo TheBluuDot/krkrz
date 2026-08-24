@@ -1,0 +1,9 @@
+diff a/visual/FreeTypeFontRasterizer.h b/visual/FreeTypeFontRasterizer.h	(rejected hunks)
+@@ -25,6 +25,7 @@ public:
+ 	void GetGlyphDrawRect( const ttstr & text, struct tTVPRect& area );
+ 	bool AddFont( const ttstr& storage, std::vector<tjs_string>* faces );
+ 	void GetFontList(std::vector<ttstr> & list, tjs_uint32 flags, const struct tTVPFont & font );
++	bool ShapeText( const ttstr & text, std::vector<tTVPShapedGlyph> & glyphs ) override;
+ };
+ 
+ #endif // __FREE_TYPE_FONT_RASTERIZER_H__

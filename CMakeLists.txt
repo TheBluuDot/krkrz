@@ -152,7 +152,34 @@ find_package(oniguruma CONFIG REQUIRED)
 find_package(SDL2 CONFIG REQUIRED)
 find_path(PICOJSON_INCLUDE_DIRS "picojson/picojson.h" REQUIRED)
 
-message(STATUS "It's here: \n\t${PICOJSON_INCLUDE_DIRS}\n\t${JPEG_INCLUDE_DIR}\n\t${JPEG_LIBRARIES}")
+# Complex text layout (complete RTL support: Awami Nastaliq etc.)
+# Text is shaped through libraqm, which drives HarfBuzz; HarfBuzz must
+# have its Graphite2 shaper enabled so fonts carrying Silf tables
+# (Awami Nastaliq and other Graphite smart fonts) shape correctly.
+find_path(RAQM_INCLUDE_DIR raqm.h REQUIRED)
+find_library(RAQM_LIBRARY NAMES raqm REQUIRED)
+find_path(HARFBUZZ_INCLUDE_DIR hb.h REQUIRED)
+find_library(HARFBUZZ_LIBRARY NAMES harfbuzz REQUIRED)
+find_path(FRIBIDI_INCLUDE_DIR fribidi/fribidi.h REQUIRED)
+find_library(FRIBIDI_LIBRARY NAMES fribidi REQUIRED)
+find_path(GRAPHITE2_INCLUDE_DIR graphite2/Font.h REQUIRED)
+find_library(GRAPHITE2_LIBRARY NAMES graphite2 REQUIRED)
+
+include(CheckCXXSourceCompiles)
+set(CMAKE_REQUIRED_INCLUDES ${HARFBUZZ_INCLUDE_DIR})
+set(CMAKE_REQUIRED_LIBRARIES ${HARFBUZZ_LIBRARY} ${GRAPHITE2_LIBRARY})
+check_cxx_source_compiles("#include <hb.h>
+#include <hb-graphite2.h>
+int main() { return (int)(size_t)(void*)&hb_graphite2_face_get_gr_face; }
+" KRKRZ_HARFBUZZ_HAS_GRAPHITE2)
+unset(CMAKE_REQUIRED_INCLUDES)
+unset(CMAKE_REQUIRED_LIBRARIES)
+if(NOT KRKRZ_HARFBUZZ_HAS_GRAPHITE2)
+message(FATAL_ERROR
+    "HarfBuzz was built without Graphite2 support. "
+    "Graphite smart fonts such as Awami Nastaliq cannot be shaped without it. "
+    "Declare harfbuzz with the graphite2 feature (see vcpkg.json).")
+endif()
 
 target_link_libraries(${ExecutableName} 
 PRIVATE 
@@ -163,12 +190,20 @@ PRIVATE
     libjpeg-turbo::turbojpeg-static
     oniguruma::onig
     SDL2::SDL2
+    ${RAQM_LIBRARY}
+    ${HARFBUZZ_LIBRARY}
+    ${FRIBIDI_LIBRARY}
+    ${GRAPHITE2_LIBRARY}
 )
 
 target_include_directories(${ExecutableName} 
 PRIVATE 
     ${JPEG_INCLUDE_DIR}
     ${PICOJSON_INCLUDE_DIRS}
+    ${RAQM_INCLUDE_DIR}
+    ${HARFBUZZ_INCLUDE_DIR}
+    ${FRIBIDI_INCLUDE_DIR}
+    ${GRAPHITE2_INCLUDE_DIR}
 )
 
 target_compile_definitions(${ExecutableName}
@@ -184,7 +219,10 @@ PUBLIC
     TVP_LOG_TO_COMMANDLINE_CONSOLE
     TVP_REPORT_HW_EXCEPTION
     TVP_ENABLE_EXECUTE_AT_EXCEPTION
+    TVP_ENABLE_RAQM
 )
+
+message(STATUS "It's here: \n\t${PICOJSON_INCLUDE_DIRS}\n\t${JPEG_INCLUDE_DIR}\n\t${JPEG_LIBRARIES}")
 
 target_include_directories(${ExecutableName}
 PRIVATE

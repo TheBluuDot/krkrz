@@ -440,6 +440,58 @@ void tFreeTypeFace::SetHeight(int height)
 
 
 //---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
+/**
+ * Ensure a loaded glyph bitmap is in 8-bit 256-gray-level form.
+ * Converts monochrome bitmaps and rescales reduced gray levels.
+ * @return pointer to the bitmap to use (*ft_bmp or new_bmp); when the
+ *         returned bitmap differs from the input, release_out is set and
+ *         the caller must free it with FT_Bitmap_Done.
+ */
+static FT_Bitmap * TVPNormalizeGlyphBitmap(FT_Face face, FT_Bitmap* ft_bmp, bool & release_out)
+{
+	release_out = false;
+	if(!(ft_bmp->rows && ft_bmp->width))
+		return ft_bmp; // empty bitmap: nothing to normalize
+
+	FT_Bitmap new_bmp;
+	if(ft_bmp->pixel_mode != ft_pixel_mode_grays)
+	{
+		// not grays: convert into a grays bitmap
+		FT_Bitmap_New(&new_bmp);
+		release_out = true;
+		ft_bmp = &new_bmp;
+		FT_Error err = FT_Bitmap_Convert(face->glyph->library,
+			&(face->glyph->bitmap), &new_bmp, 1);
+			// alignment is re-done when converting to tGlyphBitmap form,
+			// so specifying 1 here is fine
+		if(err)
+		{
+			FT_Bitmap_Done(face->glyph->library, ft_bmp);
+			return NULL;
+		}
+	}
+
+	if(ft_bmp->num_grays != 256)
+	{
+		// gray levels are less than 256: multiply up to reach 256 levels
+		tjs_int32 multiply =
+			static_cast<tjs_int32>((static_cast<tjs_int32> (1) << 30) - 1) /
+				(ft_bmp->num_grays - 1);
+		for(tjs_int y = ft_bmp->rows - 1; y >= 0; y--)
+		{
+			unsigned char * p = ft_bmp->buffer + y * ft_bmp->pitch;
+			for(tjs_int x = ft_bmp->width - 1; x >= 0; x--)
+			{
+				tjs_int32 v = static_cast<tjs_int32>((*p * multiply)  >> 22);
+				*p = static_cast<unsigned char>(v);
+				p++;
+			}
+		}
+	}
+	return ft_bmp;
+}
+//---------------------------------------------------------------------------
 /**
  * 指定した文字コードに対するグリフビットマップを得る
  * @param code	文字コード
@@ -469,53 +521,15 @@ tTVPCharacterData * tFreeTypeFace::GetGlyphFromCharcode(tjs_char code)
 		if(err) return NULL;
 	}
 
-	// 一応ビットマップ形式をチェック
-	FT_Bitmap *ft_bmp = &(FTFace->glyph->bitmap);
-	FT_Bitmap new_bmp;
+	// ビットマップ形式を 8bit/256 階調に正規化する
+	FT_Bitmap *ft_bmp = NULL;
 	bool release_ft_bmp = false;
 	tTVPCharacterData * glyph_bmp = NULL;
 	try
 	{
-		if(ft_bmp->rows && ft_bmp->width)
-		{
-			// ビットマップがサイズを持っている場合
-			if(ft_bmp->pixel_mode != ft_pixel_mode_grays)
-			{
-				// ft_pixel_mode_grays ではないので ft_pixel_mode_grays 形式に変換する
-				FT_Bitmap_New(&new_bmp);
-				release_ft_bmp = true;
-				ft_bmp = &new_bmp;
-				err = FT_Bitmap_Convert(FTFace->glyph->library,
-					&(FTFace->glyph->bitmap),
-					&new_bmp, 1);
-					// 結局 tGlyphBitmap 形式に変換する際にアラインメントをし直すので
-					// ここで指定する alignment は 1 でよい
-				if(err)
-				{
-					if(release_ft_bmp) FT_Bitmap_Done(FTFace->glyph->library, ft_bmp);
-					return NULL;
-				}
-			}
+		ft_bmp = TVPNormalizeGlyphBitmap(FTFace, &(FTFace->glyph->bitmap), release_ft_bmp);
+		if(ft_bmp == NULL) return NULL;
 
-			if(ft_bmp->num_grays != 256)
-			{
-				// gray レベルが 256 ではない
-				// 256 になるように乗算を行う
-				tjs_int32 multiply =
-					static_cast<tjs_int32>((static_cast<tjs_int32> (1) << 30) - 1) /
-						(ft_bmp->num_grays - 1);
-				for(tjs_int y = ft_bmp->rows - 1; y >= 0; y--)
-				{
-					unsigned char * p = ft_bmp->buffer + y * ft_bmp->pitch;
-					for(tjs_int x = ft_bmp->width - 1; x >= 0; x--)
-					{
-						tjs_int32 v = static_cast<tjs_int32>((*p * multiply)  >> 22);
-						*p = static_cast<unsigned char>(v);
-						p++;
-					}
-				}
-			}
-		}
 		// 64倍されているものを解除する
 		metrics.CellIncX = FT_PosToInt( metrics.CellIncX );
 		metrics.CellIncY = FT_PosToInt( metrics.CellIncY );
@@ -561,6 +575,94 @@ tTVPCharacterData * tFreeTypeFace::GetGlyphFromCharcode(tjs_char code)
 }
 //---------------------------------------------------------------------------
 
+/**
+ * 指定したグリフインデックスに対するグリフビットマップを得る(シェーピング用)
+ * @param glyph_index	グリフインデックス
+ * @param cellincx	送り幅(X方向、ピクセル、シェーパから)
+ * @param cellincy	送り幅(Y方向、ピクセル、シェーパから)
+ * @param ofs_x	描画オフセット(X方向、ピクセル、シェーパから)
+ * @param ofs_y	描画オフセット(Y方向、ピクセル、シェーパから)
+ * @return	新規作成されたグリフビットマップオブジェクトへのポインタ
+ *			NULL の場合は変換に失敗した場合
+ */
+tTVPCharacterData * tFreeTypeFace::GetGlyphFromGlyphIndex(tjs_uint glyph_index,
+	tjs_int cellincx, tjs_int cellincy, tjs_int ofs_x, tjs_int ofs_y)
+{
+	// グリフスロットにグリフを読み込む
+	FT_Int32 load_glyph_flag = FT_LOAD_NO_BITMAP;
+	if(Options & TVP_FACE_OPTIONS_NO_ANTIALIASING)
+		load_glyph_flag |= FT_LOAD_TARGET_MONO;
+	if(Options & TVP_FACE_OPTIONS_NO_HINTING)
+		load_glyph_flag |= FT_LOAD_NO_HINTING|FT_LOAD_NO_AUTOHINT;
+	if(Options & TVP_FACE_OPTIONS_FORCE_AUTO_HINTING)
+		load_glyph_flag |= FT_LOAD_FORCE_AUTOHINT;
+
+	if( FT_Load_Glyph(FTFace, glyph_index, load_glyph_flag) ) return NULL;
+
+	// フォントの変形を行う
+	if( Options & TVP_TF_BOLD ) FT_GlyphSlot_Embolden( FTFace->glyph );
+	if( Options & TVP_TF_ITALIC ) FT_GlyphSlot_Oblique( FTFace->glyph );
+
+	// 文字をレンダリングする
+	if(FTFace->glyph->format != FT_GLYPH_FORMAT_BITMAP)
+	{
+		FT_Render_Mode mode;
+		if(!(Options & TVP_FACE_OPTIONS_NO_ANTIALIASING))
+			mode = FT_RENDER_MODE_NORMAL;
+		else
+			mode = FT_RENDER_MODE_MONO;
+		if( FT_Render_Glyph(FTFace->glyph, mode) ) return NULL;
+	}
+
+	FT_Bitmap *ft_bmp = NULL;
+	bool release_ft_bmp = false;
+	tTVPCharacterData * glyph_bmp = NULL;
+	try
+	{
+		ft_bmp = TVPNormalizeGlyphBitmap(FTFace, &(FTFace->glyph->bitmap), release_ft_bmp);
+		if(ft_bmp == NULL) return NULL;
+
+		// 送り幅とオフセットはシェーパが計算したピクセル値
+		tGlyphMetrics metrics;
+		metrics.CellIncX = cellincx;
+		metrics.CellIncY = cellincy;
+
+		int baseline = (int)( FTFace->ascender ) * FTFace->size->metrics.y_ppem / FTFace->units_per_EM;
+
+		glyph_bmp = new tTVPCharacterData(
+			ft_bmp->buffer,
+			ft_bmp->pitch,
+			  FTFace->glyph->bitmap_left + ofs_x,
+			  baseline - FTFace->glyph->bitmap_top + ofs_y,
+			  ft_bmp->width,
+			  ft_bmp->rows,
+			metrics);
+		glyph_bmp->Gray = 256;
+
+		if( Options & TVP_TF_UNDERLINE ) {
+			tjs_int pos = -1, thickness = -1;
+			GetUnderline( pos, thickness );
+			if( pos >= 0 && thickness > 0 ) {
+				glyph_bmp->AddHorizontalLine( pos, thickness, 255 );
+			}
+		}
+		if( Options & TVP_TF_STRIKEOUT ) {
+			tjs_int pos = -1, thickness = -1;
+			GetStrikeOut( pos, thickness );
+			if( pos >= 0 && thickness > 0 ) {
+				glyph_bmp->AddHorizontalLine( pos, thickness, 255 );
+			}
+		}
+	}
+	catch(...)
+	{
+		if(release_ft_bmp) FT_Bitmap_Done(FTFace->glyph->library, ft_bmp);
+		throw;
+	}
+	if(release_ft_bmp) FT_Bitmap_Done(FTFace->glyph->library, ft_bmp);
+
+	return glyph_bmp;
+}
 //---------------------------------------------------------------------------
 /**
  * 指定した文字コードに対する描画領域を得る

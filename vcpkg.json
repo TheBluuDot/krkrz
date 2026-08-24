@@ -3,9 +3,16 @@
     "version-string": "0.1.0-dev",
     "dependencies": [
         "freetype",
+        "fribidi",
+        "graphite2",
+        {
+            "name": "harfbuzz",
+            "features": ["graphite2"]
+        },
         "jxrlib",
         "libjpeg-turbo",
         "libpng",
+        "libraqm",
         "oniguruma",
         "picojson",
         "sdl2",

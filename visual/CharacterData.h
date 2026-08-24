@@ -17,6 +17,21 @@ struct tGlyphMetrics
 
 //---------------------------------------------------------------------------
 /**
+ * A single shaped glyph produced by the complex text layout layer
+ * (libraqm: bidi + harfbuzz/graphite2 shaping). Positions are pixels.
+ */
+struct tTVPShapedGlyph
+{
+	tjs_uint GlyphIndex; //!< FreeType glyph index (glyph ID)
+	tjs_uint Cluster;    //!< index of first source codepoint in the shaped text
+	tjs_int CellIncX;    //!< pen advance in X, pixels
+	tjs_int CellIncY;    //!< pen advance in Y, pixels
+	tjs_int OfsX;        //!< draw offset in X relative to pen position, pixels
+	tjs_int OfsY;        //!< draw offset in Y relative to pen position, pixels
+};
+
+//---------------------------------------------------------------------------
+/**
  * １グリフを表すクラス
  */
 class tTVPCharacterData
@@ -101,11 +116,34 @@ struct tTVPFontAndCharacterData
 	bool Antialiased;
 	bool Blured;
 	bool Hinting;
+	// Complex-text (shaped) mode: the key addresses a font glyph directly
+	// instead of a character code, carrying the metrics computed by the
+	// shaper so they survive the glyph cache round-trip.
+	bool GlyphIndexMode;
+	tjs_uint GlyphIndex;
+	tjs_int ShapedCellIncX;
+	tjs_int ShapedCellIncY;
+	tjs_int ShapedOfsX;
+	tjs_int ShapedOfsY;
+
+	tTVPFontAndCharacterData() :
+		FontHash(0), Character(0), BlurLevel(0), BlurWidth(0),
+		Antialiased(false), Blured(false), Hinting(true),
+		GlyphIndexMode(false), GlyphIndex(0),
+		ShapedCellIncX(0), ShapedCellIncY(0), ShapedOfsX(0), ShapedOfsY(0) {}
+
 	bool operator == (const tTVPFontAndCharacterData &rhs) const {
 		return Character == rhs.Character && Font == rhs.Font &&
 			Antialiased == rhs.Antialiased && BlurLevel == rhs.BlurLevel &&
 			BlurWidth == rhs.BlurWidth && Blured == rhs.Blured &&
-			Hinting == rhs.Hinting;
+			Hinting == rhs.Hinting &&
+			GlyphIndexMode == rhs.GlyphIndexMode &&
+			(!GlyphIndexMode || (
+				GlyphIndex == rhs.GlyphIndex &&
+				ShapedCellIncX == rhs.ShapedCellIncX &&
+				ShapedCellIncY == rhs.ShapedCellIncY &&
+				ShapedOfsX == rhs.ShapedOfsX &&
+				ShapedOfsY == rhs.ShapedOfsY));
 	}
 };
 //---------------------------------------------------------------------------
@@ -120,6 +158,12 @@ public:
 		v ^= val.Character;
 		v ^= val.Blured?1:0;
 		v ^= val.BlurLevel ^ val.BlurWidth;
+		if (val.GlyphIndexMode)
+		{
+			// domain-separate shaped glyph entries from plain characters
+			v ^= val.GlyphIndex * 2654435769u;
+			v ^= 0x5a5a5a5a;
+		}
 		return v;
 	}
 };

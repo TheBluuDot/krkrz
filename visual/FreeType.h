@@ -111,7 +111,22 @@ public:
 		if( thickness < 1 ) thickness = 1;
 		pos = FTFace->ascender * 7 * ppem / (10 * upe);
 	}
+	//!< FreeType Face object (for external shapers)
+	FT_Face GetFTFaceForShaping() const { return FTFace; }
+
 	tTVPCharacterData * GetGlyphFromCharcode(tjs_char code);
+	/**
+	 * Render a glyph addressed by glyph index (glyph ID), used by the
+	 * complex text shaping path. Cell increments and draw offsets come
+	 * from the shaper, not from FreeType advances.
+	 * @param glyph_index  FreeType glyph index
+	 * @param cellincx     pen advance in X, pixels (from shaper)
+	 * @param cellincy     pen advance in Y, pixels (from shaper)
+	 * @param ofs_x        draw offset in X relative to pen, pixels (from shaper)
+	 * @param ofs_y        draw offset in Y relative to pen, pixels (from shaper)
+	 */
+	tTVPCharacterData * GetGlyphFromGlyphIndex(tjs_uint glyph_index,
+		tjs_int cellincx, tjs_int cellincy, tjs_int ofs_x, tjs_int ofs_y);
 	bool GetGlyphRectFromCharcode(struct tTVPRect& rt, tjs_char code, tjs_int& advancex, tjs_int& advancey );
 	bool GetGlyphMetricsFromCharcode(tjs_char code, tGlyphMetrics & metrics);
 	bool GetGlyphSizeFromCharcode(tjs_char code, tGlyphMetrics & metrics);
