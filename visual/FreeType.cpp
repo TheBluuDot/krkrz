@@ -805,3 +805,4 @@ bool tFreeTypeFace::LoadGlyphSlotFromCharcode(tjs_char code)
 }
 //---------------------------------------------------------------------------
 
+// rtl-nastaliq
