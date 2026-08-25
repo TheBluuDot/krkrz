@@ -163,17 +163,12 @@ find_library(HARFBUZZ_LIBRARY NAMES harfbuzz REQUIRED)
 find_library(FREETYPE_LIBRARY NAMES freetype REQUIRED)
 find_path(FREETYPE_INCLUDE_DIR ft2build.h PATH_SUFFIXES freetype2 REQUIRED)
 
-include(CheckCXXSourceCompiles)
-set(CMAKE_REQUIRED_INCLUDES ${HARFBUZZ_INCLUDE_DIR} ${FREETYPE_INCLUDE_DIR} ${GRAPHITE2_INCLUDE_DIR})
-check_cxx_source_compiles("#include <hb.h>
-#include <hb-graphite2.h>
-int main() { return (int)(size_t)(void*)&hb_graphite2_face_get_gr_face; }
-" KRKRZ_HARFBUZZ_HAS_GRAPHITE2)
-unset(CMAKE_REQUIRED_INCLUDES)
-unset(CMAKE_REQUIRED_LIBRARIES)
-if(NOT KRKRZ_HARFBUZZ_HAS_GRAPHITE2)
+# vcpkg's harfbuzzConfig.cmake exports the features the library was
+# built with; linking a static /MT harfbuzz into a probe would mix CRTs
+find_package(harfbuzz CONFIG REQUIRED)
+if(NOT DEFINED HARFBUZZ_FEATURES OR NOT "graphite2" IN_LIST HARFBUZZ_FEATURES)
 message(FATAL_ERROR
-    "HarfBuzz was built without Graphite2 support. "
+    "HarfBuzz was built without the graphite2 feature. "
     "Graphite smart fonts such as Awami Nastaliq cannot be shaped without it. "
     "Declare harfbuzz with the graphite2 feature (see vcpkg.json).")
 endif()
