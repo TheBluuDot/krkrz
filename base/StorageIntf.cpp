@@ -1445,7 +1445,9 @@ TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/isExistentStorageNoSearchNoNormalize)
 	if(numparams < 1) return TJS_E_BADPARAMCOUNT;
 
 	if(result)
-		*result = (tjs_int)TVPIsExistentStorageNoSearchNoNormalize(*param[0]);
+		*result = (tjs_int)TVPIsExistentStorageNoSearchNoNormalize(
+			TVPNormalizeStorageName(*param[0]));
+
 	return TJS_S_OK;
 }
 TJS_END_NATIVE_STATIC_METHOD_DECL(/*func. name*/isExistentStorageNoSearchNoNormalize)
