@@ -118,6 +118,7 @@ bool FontSystem::AddFontFromFile( const std::wstring & localpath, std::vector<st
 	if( added == 0 ) return false;
 
 	// retrieve the face name(s) through FreeType and register them
+	FT_Face face = NULL;
 	if( FT_New_Face( FreeTypeLibrary, std::string( localpath.begin(), localpath.end() ).c_str(), 0, &face ) == 0 ) {
 		if( face->family_name ) {
 			std::wstring family;
