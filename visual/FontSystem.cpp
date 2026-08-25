@@ -1,5 +1,4 @@
 
-
 #include "tjsCommHead.h"
 
 #include "FontSystem.h"
@@ -7,6 +6,17 @@
 #include "MsgIntf.h"
 #include <vector>
 
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4819)
+#endif
+#include <ft2build.h>
+#include FT_FREETYPE_H
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
+
+extern void TVPInitializeFont();
 extern void TVPGetAllFontList( std::vector<std::wstring>& list );
 extern const tjs_char *TVPGetDefaultFontName();
 
@@ -87,11 +97,35 @@ std::wstring FontSystem::GetBeingFont(std::wstring fonts) {
 		}
 
 		prev_empty_name = (fontname == TJS_W(""));
-	}
 
+	}
 	if(vfont) {
 		return std::wstring(TJS_W("@")) + std::wstring(TVPGetDefaultFontName());
 	} else {
 		return std::wstring(TVPGetDefaultFontName());
 	}
+}
+
+//---------------------------------------------------------------------------
+extern FT_Library FreeTypeLibrary; //!< FreeType ライブラリ (FreeType.cpp)
+extern bool TVPEncodeUTF8ToUTF16( std::wstring &output, const std::string &source );
+
+bool FontSystem::AddFontFromFile( const std::wstring & localpath, std::vector<std::wstring>* faces ) {
+	// register privately with GDI so that the native FreeType rasterizer
+	// (which opens fonts through GDI GetFontData) can access the file by
+	// face name; FR_PRIVATE keeps it out of the system font list
+	int added = AddFontResourceExW( localpath.c_str(), FR_PRIVATE, NULL );
+	if( added == 0 ) return false;
+
+	// retrieve the face name(s) through FreeType and register them
+	if( FT_New_Face( FreeTypeLibrary, std::string( localpath.begin(), localpath.end() ).c_str(), 0, &face ) == 0 ) {
+		if( face->family_name ) {
+			std::wstring family;
+			TVPEncodeUTF8ToUTF16( family, face->family_name );
+			AddFont( family );
+			if( faces ) faces->push_back( family );
+		}
+		FT_Done_Face( face );
+	}
+	return true;
 }

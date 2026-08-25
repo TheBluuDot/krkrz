@@ -6,6 +6,7 @@
 #include "tvpfontstruc.h"
 #include "tjsHashSearch.h"
 #include <string>
+#include <vector>
 
 class tTVPWStringHash {
 public:
@@ -50,6 +51,13 @@ public:
 	const tTVPFont& GetDefaultFont() const {
 		return DefaultFont;
 	}
+	/**
+	 * Register a font file (local native path) with GDI privately and
+	 * add its face name(s) to the known font name list. Used by the
+	 * TJS Font.addFont static method. Returns true on success; face
+	 * names are appended to faces when it is not NULL.
+	 */
+	bool AddFontFromFile( const std::wstring & localpath, std::vector<std::wstring>* faces );
 };
 
 #endif // __FONT_SYSTEM_H__

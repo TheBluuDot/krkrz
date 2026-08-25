@@ -10231,6 +10231,44 @@ TJS_BEGIN_NATIVE_PROP_DECL(rasterizer)
 }
 TJS_END_NATIVE_STATIC_PROP_DECL(rasterizer)
 //----------------------------------------------------------------------
+TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/addFont)
+{
+	// register a font file (local path or storage name resolving to a
+	// local file) with GDI privately and return the face names it
+	// provides, krkrsdl2/Kirikiroid2-compatible
+	if(numparams < 1) return TJS_E_BADPARAMCOUNT;
+
+	if(result)
+	{
+		std::vector<std::wstring> faces;
+		ttstr fontname = *param[0];
+		ttstr localname = fontname;
+		TVPGetLocalName( localname );
+		if( TVPFontSystem->AddFontFromFile( localname.AsStdString(), &faces ) )
+		{
+			iTJSDispatch2 *dsp = TJSCreateArrayObject();
+			tTJSVariant tmp(dsp, dsp);
+			*result = tmp;
+			dsp->Release();
+			for(tjs_uint i = 0; i < faces.size(); i++)
+			{
+				tmp = ttstr(faces[i]);
+				dsp->PropSetByNum(TJS_MEMBERENSURE, i, &tmp, dsp);
+			}
+		}
+	}
+	else
+	{
+		ttstr fontname = *param[0];
+		ttstr localname = fontname;
+		TVPGetLocalName( localname );
+		TVPFontSystem->AddFontFromFile( localname.AsStdString(), nullptr );
+	}
+
+	return TJS_S_OK;
+}
+TJS_END_NATIVE_STATIC_METHOD_DECL(/*func. name*/addFont)
+//----------------------------------------------------------------------
 
 	TJS_END_NATIVE_MEMBERS
 }
