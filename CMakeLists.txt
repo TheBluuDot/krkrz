@@ -164,8 +164,7 @@ find_library(FREETYPE_LIBRARY NAMES freetype REQUIRED)
 find_path(FREETYPE_INCLUDE_DIR ft2build.h PATH_SUFFIXES freetype2 REQUIRED)
 
 include(CheckCXXSourceCompiles)
-set(CMAKE_REQUIRED_INCLUDES ${HARFBUZZ_INCLUDE_DIR} ${FREETYPE_INCLUDE_DIR})
-set(CMAKE_REQUIRED_LIBRARIES ${HARFBUZZ_LIBRARY} ${GRAPHITE2_LIBRARY} ${FREETYPE_LIBRARY})
+set(CMAKE_REQUIRED_INCLUDES ${HARFBUZZ_INCLUDE_DIR} ${FREETYPE_INCLUDE_DIR} ${GRAPHITE2_INCLUDE_DIR})
 check_cxx_source_compiles("#include <hb.h>
 #include <hb-graphite2.h>
 int main() { return (int)(size_t)(void*)&hb_graphite2_face_get_gr_face; }
