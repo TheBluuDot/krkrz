@@ -632,8 +632,8 @@ tTVPCharacterData * tFreeTypeFace::GetGlyphFromGlyphIndex(tjs_uint glyph_index,
 		glyph_bmp = new tTVPCharacterData(
 			ft_bmp->buffer,
 			ft_bmp->pitch,
-			  FTFace->glyph->bitmap_left + ofs_x,
-			  baseline - FTFace->glyph->bitmap_top + ofs_y,
+		  FTFace->glyph->bitmap_left + ofs_x,
+		  baseline - FTFace->glyph->bitmap_top - ofs_y,
 			  ft_bmp->width,
 			  ft_bmp->rows,
 			metrics);
