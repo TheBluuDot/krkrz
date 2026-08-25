@@ -158,16 +158,14 @@ find_path(PICOJSON_INCLUDE_DIRS "picojson/picojson.h" REQUIRED)
 # (Awami Nastaliq and other Graphite smart fonts) shape correctly.
 find_path(RAQM_INCLUDE_DIR raqm.h REQUIRED)
 find_library(RAQM_LIBRARY NAMES raqm REQUIRED)
-find_path(HARFBUZZ_INCLUDE_DIR hb.h REQUIRED)
+find_path(HARFBUZZ_INCLUDE_DIR hb.h PATH_SUFFIXES harfbuzz REQUIRED)
 find_library(HARFBUZZ_LIBRARY NAMES harfbuzz REQUIRED)
-find_path(FRIBIDI_INCLUDE_DIR fribidi/fribidi.h REQUIRED)
-find_library(FRIBIDI_LIBRARY NAMES fribidi REQUIRED)
-find_path(GRAPHITE2_INCLUDE_DIR graphite2/Font.h REQUIRED)
-find_library(GRAPHITE2_LIBRARY NAMES graphite2 REQUIRED)
+find_library(FREETYPE_LIBRARY NAMES freetype REQUIRED)
+find_path(FREETYPE_INCLUDE_DIR ft2build.h PATH_SUFFIXES freetype2 REQUIRED)
 
 include(CheckCXXSourceCompiles)
-set(CMAKE_REQUIRED_INCLUDES ${HARFBUZZ_INCLUDE_DIR})
-set(CMAKE_REQUIRED_LIBRARIES ${HARFBUZZ_LIBRARY} ${GRAPHITE2_LIBRARY})
+set(CMAKE_REQUIRED_INCLUDES ${HARFBUZZ_INCLUDE_DIR} ${FREETYPE_INCLUDE_DIR})
+set(CMAKE_REQUIRED_LIBRARIES ${HARFBUZZ_LIBRARY} ${GRAPHITE2_LIBRARY} ${FREETYPE_LIBRARY})
 check_cxx_source_compiles("#include <hb.h>
 #include <hb-graphite2.h>
 int main() { return (int)(size_t)(void*)&hb_graphite2_face_get_gr_face; }
