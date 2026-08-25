@@ -20,6 +20,7 @@
 #include "LayerTreeOwner.h"
 #include "GraphicsLoaderIntf.h"
 #include "StorageIntf.h"
+#include "UtilStreams.h"
 #include "tvpgl.h"
 #include "EventIntf.h"
 #include "SysInitIntf.h"
@@ -10242,8 +10243,26 @@ TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/addFont)
 	{
 		std::vector<std::wstring> faces;
 		ttstr fontname = *param[0];
-		ttstr localname = fontname;
-		TVPGetLocalName( localname );
+
+		// resolve to a local file; archive members are extracted to a
+		// temporary file which is kept for the lifetime of the process
+		// (GDI keeps reading the font file)
+		static std::vector<tTVPLocalTempStorageHolder *> holders;
+		ttstr localname;
+		ttstr place(TVPGetPlacedPath(fontname));
+		if(!place.IsEmpty())
+		{
+			tTVPLocalTempStorageHolder * holder =
+				new tTVPLocalTempStorageHolder(place);
+			localname = holder->GetLocalName();
+			holders.push_back(holder);
+		}
+		else
+		{
+			localname = fontname;
+			TVPGetLocalName( localname );
+		}
+
 		if( TVPFontSystem->AddFontFromFile( localname.AsStdString(), &faces ) )
 		{
 			iTJSDispatch2 *dsp = TJSCreateArrayObject();
