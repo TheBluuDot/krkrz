@@ -290,6 +290,20 @@ ttstr tTVPStorageMediaManager::NormalizeStorageName(const ttstr &name,
 	}
 	if(tmp.IsEmpty()) TVPThrowExceptionMessage(TVPInvalidPathName, name);
 
+	// The archive part of an "archive>member" name is a file on the
+	// file system, never a member of the current in-archive directory.
+	// Resolve relative archive parts against the exe folder instead of
+	// the current in-archive directory (which the process changes to
+	// the data.xp3 root at startup).
+	if(inarc_name_found)
+	{
+		const tjs_char *q = tmp.c_str();
+		const tjs_char *r = q;
+		while(*r && ((*r >= TJS_W('A') && *r <= TJS_W('Z')) ||
+			(*r >= TJS_W('a') && *r <= TJS_W('z')))) r++;
+		if(*r != TJS_W(':') && *q != TJS_W('/') && *q != TJS_W('\\'))
+			tmp = TVPGetAppPath() + tmp;
+	}
 
 	// split the name into media, domain, path
 	// (and guess what component is omitted)
@@ -1399,6 +1413,7 @@ TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/getFullPath)
 
 	return TJS_S_OK;
 }
+//----------------------------------------------------------------------
 TJS_END_NATIVE_STATIC_METHOD_DECL(/*func. name*/getFullPath)
 //----------------------------------------------------------------------
 TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/getPlacedPath)
@@ -1413,6 +1428,27 @@ TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/getPlacedPath)
 	return TJS_S_OK;
 }
 TJS_END_NATIVE_STATIC_METHOD_DECL(/*func. name*/getPlacedPath)
+//----------------------------------------------------------------------
+TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/isExistentStorageNoSearch)
+{
+	if(numparams < 1) return TJS_E_BADPARAMCOUNT;
+
+	if(result)
+		*result = (tjs_int)TVPIsExistentStorageNoSearch(*param[0]);
+
+	return TJS_S_OK;
+}
+TJS_END_NATIVE_STATIC_METHOD_DECL(/*func. name*/isExistentStorageNoSearch)
+//----------------------------------------------------------------------
+TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/isExistentStorageNoSearchNoNormalize)
+{
+	if(numparams < 1) return TJS_E_BADPARAMCOUNT;
+
+	if(result)
+		*result = (tjs_int)TVPIsExistentStorageNoSearchNoNormalize(*param[0]);
+	return TJS_S_OK;
+}
+TJS_END_NATIVE_STATIC_METHOD_DECL(/*func. name*/isExistentStorageNoSearchNoNormalize)
 //----------------------------------------------------------------------
 TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/isExistentStorage)
 {

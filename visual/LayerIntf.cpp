@@ -10249,6 +10249,7 @@ TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/addFont)
 		// (GDI keeps reading the font file)
 		static std::vector<tTVPLocalTempStorageHolder *> holders;
 		ttstr localname;
+		bool resolved = false;
 		ttstr place(TVPGetPlacedPath(fontname));
 		if(!place.IsEmpty())
 		{
@@ -10256,14 +10257,27 @@ TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/addFont)
 				new tTVPLocalTempStorageHolder(place);
 			localname = holder->GetLocalName();
 			holders.push_back(holder);
+			resolved = true;
 		}
 		else
 		{
-			localname = fontname;
-			TVPGetLocalName( localname );
+			// not found through the auto path table; a local file may
+			// still be meant. never let resolution errors escape:
+			// callers treat a failed registration as an empty result
+			try
+			{
+				localname = fontname;
+				TVPGetLocalName( localname );
+				resolved = true;
+			}
+			catch(...)
+			{
+				resolved = false;
+			}
 		}
 
-		if( TVPFontSystem->AddFontFromFile( localname.AsStdString(), &faces ) )
+		if( resolved &&
+			TVPFontSystem->AddFontFromFile( localname.AsStdString(), &faces ) )
 		{
 			iTJSDispatch2 *dsp = TJSCreateArrayObject();
 			tTJSVariant tmp(dsp, dsp);
