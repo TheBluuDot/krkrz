@@ -160,7 +160,11 @@ find_path(RAQM_INCLUDE_DIR raqm.h REQUIRED)
 find_library(RAQM_LIBRARY NAMES raqm REQUIRED)
 find_path(HARFBUZZ_INCLUDE_DIR hb.h PATH_SUFFIXES harfbuzz REQUIRED)
 find_library(HARFBUZZ_LIBRARY NAMES harfbuzz REQUIRED)
-find_library(FREETYPE_LIBRARY NAMES freetype REQUIRED)
+find_library(FRIBIDI_LIBRARY NAMES fribidi libfribidi REQUIRED)
+message(STATUS "RAQM_LIBRARY=${RAQM_LIBRARY}")
+message(STATUS "HARFBUZZ_LIBRARY=${HARFBUZZ_LIBRARY}")
+message(STATUS "FRIBIDI_LIBRARY=${FRIBIDI_LIBRARY}")
+message(STATUS "GRAPHITE2_LIBRARY=${GRAPHITE2_LIBRARY}")
 find_path(FREETYPE_INCLUDE_DIR ft2build.h PATH_SUFFIXES freetype2 REQUIRED)
 
 # vcpkg's harfbuzzConfig.cmake exports the features the library was
