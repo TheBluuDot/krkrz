@@ -5,7 +5,7 @@
 #include "FreeType.h"
 #include <cmath>
 #include "MsgIntf.h"
-#include "FontSystem.h"
+#include "DebugIntf.h"
 
 #ifdef TVP_ENABLE_RAQM
 #include <raqm.h>
@@ -242,10 +242,19 @@ static bool TVPTextNeedsShaping( const ttstr & text ) {
 
 bool FreeTypeFontRasterizer::ShapeText( const ttstr & text, std::vector<tTVPShapedGlyph> & glyphs ) {
 #ifdef TVP_ENABLE_RAQM
-	if(!Face) return false;
+	if(!Face) { TVPAddImportantLog(TJS_W("[shape-diag] no Face")); return false; }
 	tjs_uint len = text.length();
 	if(len == 0) return false;
 	if(!TVPTextNeedsShaping(text)) return false; // keep legacy path for simple text
+
+	static int shape_diag_count = 0;
+	bool shape_diag = false;
+	if(shape_diag_count < 25)
+	{
+		shape_diag_count += 1;
+		shape_diag = true;
+		TVPAddImportantLog(ttstr(TJS_W("[shape-diag] begin len=") + ttstr((int)len) + TJS_W(" face=") + Face->GetFontName()));
+	}
 
 	// UTF-16 -> UTF-32 (tjs_char is char16_t on non-Windows builds,
 	// wchar_t with UTF-16 semantics on Windows builds)
@@ -268,10 +277,10 @@ bool FreeTypeFontRasterizer::ShapeText( const ttstr & text, std::vector<tTVPShap
 	}
 
 	FT_Face ftface = Face->GetFTFaceForShaping();
-	if(!ftface) return false;
+	if(!ftface) { if(shape_diag) TVPAddImportantLog(TJS_W("[shape-diag] ftface NULL -> legacy path")); return false; }
 
 	raqm_t* rq = raqm_create();
-	if(!rq) return false;
+	if(!rq) { if(shape_diag) TVPAddImportantLog(TJS_W("[shape-diag] raqm_create failed")); return false; }
 	bool ok = true;
 	ok &= raqm_set_text(rq, u32.data(), u32.size()) != 0;
 	ok &= raqm_set_freetype_face(rq, ftface) != 0;
@@ -284,6 +293,7 @@ bool FreeTypeFontRasterizer::ShapeText( const ttstr & text, std::vector<tTVPShap
 	raqm_set_freetype_load_flags(rq, load_flags);
 	ok &= raqm_layout(rq) != 0;
 	if(!ok) {
+		if(shape_diag) TVPAddImportantLog(TJS_W("[shape-diag] raqm steps failed -> legacy path"));
 		raqm_destroy(rq);
 		return false;
 	}
@@ -303,6 +313,7 @@ bool FreeTypeFontRasterizer::ShapeText( const ttstr & text, std::vector<tTVPShap
 		glyphs.push_back(sg);
 	}
 	raqm_destroy(rq);
+	if(shape_diag) TVPAddImportantLog(ttstr(TJS_W("[shape-diag] OK glyphs=") + ttstr((int)count) + TJS_W(" textlen=") + ttstr((int)len)));
 	return true;
 #else
 	return false;
