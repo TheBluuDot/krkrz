@@ -7069,18 +7069,18 @@ TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/drawText)
 	TJS_GET_NATIVE_INSTANCE(/*var. name*/_this, /*var. type*/tTJSNI_Layer);
 	if(numparams < 4) return TJS_E_BADPARAMCOUNT;
 	{
-		const ttstr *dtp = NULL;
-		if(param[2]->Type() == tvtString) dtp = param[2]->operator const ttstr *();
-		if(dtp && dtp->GetLen() > 1)
+		ttstr dttmp;
+		if(param[2]->Type() == tvtString) { dttmp = *param[2]; }
+		if(dttmp.GetLen() > 1)
 		{
 			bool dth_ar = false;
-			const tjs_char *dthp = dtp->c_str();
-			for(tjs_int dthi = 0; dthi < dtp->GetLen(); dthi++)
+			const tjs_char *dthp = dttmp.c_str();
+			for(tjs_int dthi = 0; dthi < dttmp.GetLen(); dthi++)
 			{
 				tjs_uint16 dthc = (tjs_uint16)dthp[dthi];
 				if((dthc >= 0x0590 && dthc <= 0x08FF) || (dthc >= 0xFB50 && dthc <= 0xFEFF)) { dth_ar = true; break; }
 			}
-			if(dth_ar) TVPAddLog(ttstr(TJS_W("[dt-diag] native drawText method len=") + ttstr((tjs_int)dtp->GetLen())));
+			if(dth_ar) TVPAddLog(ttstr(TJS_W("[dt-diag] native drawText method len=") + ttstr((tjs_int)dttmp.GetLen())));
 		}
 	}
 	_this->DrawText(
