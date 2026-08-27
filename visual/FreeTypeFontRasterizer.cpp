@@ -242,6 +242,7 @@ static bool TVPTextNeedsShaping( const ttstr & text ) {
 #endif
 
 bool FreeTypeFontRasterizer::ShapeText( const ttstr & text, std::vector<tTVPShapedGlyph> & glyphs ) {
+	TVPAddImportantLog(ttstr(TJS_W("[shape-diag] called len=") + ttstr((int)text.length())));
 #ifdef TVP_ENABLE_RAQM
 	if(!Face) { TVPAddImportantLog(TJS_W("[shape-diag] no Face")); return false; }
 	tjs_uint len = text.length();
