@@ -5,6 +5,7 @@
 #include "FreeType.h"
 #include <cmath>
 #include "MsgIntf.h"
+#include "FontSystem.h"
 #include "DebugIntf.h"
 
 #ifdef TVP_ENABLE_RAQM
