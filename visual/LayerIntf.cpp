@@ -4019,6 +4019,22 @@ void tTJSNI_BaseLayer::DrawText(tjs_int x, tjs_int y, const ttstr &text,
 {
 	// draw text
 	if(!MainImage) TVPThrowExceptionMessage(TVPNotDrawableLayerType);
+	static int dt_diag_count = 0;
+	if(dt_diag_count < 40 && text.GetLen() > 1)
+	{
+		bool dt_has_arabic = false;
+		const tjs_char *dp = text.c_str();
+		for(tjs_int di = 0; di < text.GetLen(); di++)
+		{
+			tjs_uint16 dc = (tjs_uint16)dp[di];
+			if((dc >= 0x0590 && dc <= 0x08FF) || (dc >= 0xFB50 && dc <= 0xFEFF)) { dt_has_arabic = true; break; }
+		}
+		if(dt_has_arabic)
+		{
+			dt_diag_count++;
+			TVPAddLog(ttstr(TJS_W("[dt-diag] BaseLayer::DrawText len=") + ttstr((tjs_int)text.GetLen()) + TJS_W(" face=") + Font.Face));
+		}
+	}
 
 	tTVPBBBltMethod met;
 

@@ -1242,6 +1242,22 @@ void tTVPNativeBaseBitmap::DrawTextSingle(const tTVPRect &destrect,
 	// text drawing function for single character
 
 	if(!Is32BPP()) TVPThrowExceptionMessage(TVPInvalidOperationFor8BPP);
+	static int dts_diag_count = 0;
+	if(dts_diag_count < 25 && text.GetLen() >= 1)
+	{
+		bool dts_has_arabic = false;
+		const tjs_char *dsp = text.c_str();
+		for(tjs_int dsi = 0; dsi < text.GetLen(); dsi++)
+		{
+			tjs_uint16 dsc = (tjs_uint16)dsp[dsi];
+			if((dsc >= 0x0590 && dsc <= 0x08FF) || (dsc >= 0xFB50 && dsc <= 0xFEFF)) { dts_has_arabic = true; break; }
+		}
+		if(dts_has_arabic)
+		{
+			dts_diag_count++;
+			TVPAddLog(ttstr(TJS_W("[dt-diag] DrawTextSingle len=") + ttstr((tjs_int)text.GetLen())));
+		}
+	}
 
 	if(bltmode == bmAlphaOnAlpha)
 	{
@@ -1424,6 +1440,22 @@ void tTVPNativeBaseBitmap::DrawTextMultiple(const tTVPRect &destrect,
 	// text drawing function for multiple characters
 
 	if(!Is32BPP()) TVPThrowExceptionMessage(TVPInvalidOperationFor8BPP);
+	static int dtm_diag_count = 0;
+	if(dtm_diag_count < 40 && text.GetLen() > 1)
+	{
+		bool dtm_has_arabic = false;
+		const tjs_char *dmp = text.c_str();
+		for(tjs_int dmi = 0; dmi < text.GetLen(); dmi++)
+		{
+			tjs_uint16 dmc = (tjs_uint16)dmp[dmi];
+			if((dmc >= 0x0590 && dmc <= 0x08FF) || (dmc >= 0xFB50 && dmc <= 0xFEFF)) { dtm_has_arabic = true; break; }
+		}
+		if(dtm_has_arabic)
+		{
+			dtm_diag_count++;
+			TVPAddLog(ttstr(TJS_W("[dt-diag] DrawTextMultiple len=") + ttstr((tjs_int)text.GetLen())));
+		}
+	}
 
 	if(bltmode == bmAlphaOnAlpha)
 	{
