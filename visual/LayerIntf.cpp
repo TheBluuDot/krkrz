@@ -9666,7 +9666,7 @@ void TJS_INTF_METHOD tTJSNI_Font::Invalidate()
 void tTJSNI_Font::SetFontFace(const ttstr & face)
 {
 	static int sff_count=0;
-	if(face.IndexOf(TJS_W("Awami")) >= 0)
+	if(wcsstr(face.c_str(), TJS_W("Awami")) != NULL)
 	{
 		TVPAddLog(ttstr(TJS_W("[font-bind] SetFontFace [") + face + TJS_W("] bound=") + (Layer ? ttstr(TJS_W("yes")) : ttstr(TJS_W("NO-LAYER"))) + TJS_W(" total=") + ttstr(sff_count)));
 	}
