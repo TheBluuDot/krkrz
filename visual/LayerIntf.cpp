@@ -4020,20 +4020,10 @@ void tTJSNI_BaseLayer::DrawText(tjs_int x, tjs_int y, const ttstr &text,
 	// draw text
 	if(!MainImage) TVPThrowExceptionMessage(TVPNotDrawableLayerType);
 	static int dt_diag_count = 0;
-	if(dt_diag_count < 40 && text.GetLen() > 1)
+	if(dt_diag_count < 30 && text.GetLen() > 0)
 	{
-		bool dt_has_arabic = false;
-		const tjs_char *dp = text.c_str();
-		for(tjs_int di = 0; di < text.GetLen(); di++)
-		{
-			tjs_uint16 dc = (tjs_uint16)dp[di];
-			if((dc >= 0x0590 && dc <= 0x08FF) || (dc >= 0xFB50 && dc <= 0xFEFF)) { dt_has_arabic = true; break; }
-		}
-		if(dt_has_arabic)
-		{
-			dt_diag_count++;
-			TVPAddLog(ttstr(TJS_W("[dt-diag] BaseLayer::DrawText len=") + ttstr((tjs_int)text.GetLen()) + TJS_W(" face=") + Font.Face));
-		}
+		dt_diag_count++;
+		TVPAddLog(ttstr(TJS_W("[dt-diag] BaseLayer::DrawText len=") + ttstr((tjs_int)text.GetLen()) + TJS_W(" face=") + Font.Face));
 	}
 
 	tTVPBBBltMethod met;
@@ -7069,18 +7059,14 @@ TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/drawText)
 	TJS_GET_NATIVE_INSTANCE(/*var. name*/_this, /*var. type*/tTJSNI_Layer);
 	if(numparams < 4) return TJS_E_BADPARAMCOUNT;
 	{
-		ttstr dttmp;
-		if(param[2]->Type() == tvtString) { dttmp = *param[2]; }
-		if(dttmp.GetLen() > 1)
+		static int dtn_count = 0;
+		if(dtn_count < 30)
 		{
-			bool dth_ar = false;
-			const tjs_char *dthp = dttmp.c_str();
-			for(tjs_int dthi = 0; dthi < dttmp.GetLen(); dthi++)
-			{
-				tjs_uint16 dthc = (tjs_uint16)dthp[dthi];
-				if((dthc >= 0x0590 && dthc <= 0x08FF) || (dthc >= 0xFB50 && dthc <= 0xFEFF)) { dth_ar = true; break; }
-			}
-			if(dth_ar) TVPAddLog(ttstr(TJS_W("[dt-diag] native drawText method len=") + ttstr((tjs_int)dttmp.GetLen())));
+			dtn_count++;
+			ttstr dttmp;
+			if(param[2]->Type() == tvtString) { dttmp = *param[2]; }
+			ttstr firstch = dttmp.GetLen() > 0 ? ttstr((tjs_int)(0xFFFF & dttmp[0])) : ttstr(TJS_W("empty"));
+			TVPAddLog(ttstr(TJS_W("[dt-diag] native drawText method len=") + ttstr((tjs_int)dttmp.GetLen()) + TJS_W(" first=") + firstch));
 		}
 	}
 	_this->DrawText(
