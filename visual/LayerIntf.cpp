@@ -9665,8 +9665,21 @@ void TJS_INTF_METHOD tTJSNI_Font::Invalidate()
 //---------------------------------------------------------------------------
 void tTJSNI_Font::SetFontFace(const ttstr & face)
 {
-	if( Layer ) { static int sff_count=0; if(sff_count < 40 && face == TJS_W("Awami Nastaliq")) { sff_count++; TVPAddLog(ttstr(TJS_W("[font-bind] BOUND SetFontFace Awami"))); } Layer->SetFontFace(face); }
-	else { static int sffu_count=0; if(sffu_count < 40 && face == TJS_W("Awami Nastaliq")) { sffu_count++; TVPAddLog(ttstr(TJS_W("[font-bind] DETACHED SetFontFace Awami (Layer==NULL!)"))); } if(Font.Face != face) { Font.Face = face; } }
+	static int sff_count=0;
+	if(sff_count < 40)
+	{
+		sff_count++;
+		if( Layer ) TVPAddLog(ttstr(TJS_W("[font-bind] BOUND SetFontFace [") + face + TJS_W("]")));
+		else TVPAddLog(ttstr(TJS_W("[font-bind] DETACHED SetFontFace [") + face + TJS_W("] (Layer==NULL)")));
+	}
+	if( Layer ) Layer->SetFontFace(face);
+	else
+	{
+		if(Font.Face != face)
+		{
+			Font.Face = face;
+		}
+	}
 }
 //---------------------------------------------------------------------------
 ttstr tTJSNI_Font::GetFontFace() const
