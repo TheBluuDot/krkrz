@@ -9666,12 +9666,11 @@ void TJS_INTF_METHOD tTJSNI_Font::Invalidate()
 void tTJSNI_Font::SetFontFace(const ttstr & face)
 {
 	static int sff_count=0;
-	if(sff_count < 40)
+	if(face.IndexOf(TJS_W("Awami")) >= 0)
 	{
-		sff_count++;
-		if( Layer ) TVPAddLog(ttstr(TJS_W("[font-bind] BOUND SetFontFace [") + face + TJS_W("]")));
-		else TVPAddLog(ttstr(TJS_W("[font-bind] DETACHED SetFontFace [") + face + TJS_W("] (Layer==NULL)")));
+		TVPAddLog(ttstr(TJS_W("[font-bind] SetFontFace [") + face + TJS_W("] bound=") + (Layer ? ttstr(TJS_W("yes")) : ttstr(TJS_W("NO-LAYER"))) + TJS_W(" total=") + ttstr(sff_count)));
 	}
+	sff_count++;
 	if( Layer ) Layer->SetFontFace(face);
 	else
 	{
