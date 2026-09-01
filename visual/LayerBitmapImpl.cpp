@@ -1243,7 +1243,7 @@ void tTVPNativeBaseBitmap::DrawTextSingle(const tTVPRect &destrect,
 
 	if(!Is32BPP()) TVPThrowExceptionMessage(TVPInvalidOperationFor8BPP);
 	static int dts_diag_count = 0;
-	if(dts_diag_count < 25 && text.GetLen() >= 1)
+	if(dts_diag_count < 1000 && text.GetLen() >= 1)
 	{
 		bool dts_has_arabic = false;
 		const tjs_char *dsp = text.c_str();
@@ -1441,7 +1441,7 @@ void tTVPNativeBaseBitmap::DrawTextMultiple(const tTVPRect &destrect,
 
 	if(!Is32BPP()) TVPThrowExceptionMessage(TVPInvalidOperationFor8BPP);
 	static int dtm_diag_count = 0;
-	if(dtm_diag_count < 40 && text.GetLen() > 1)
+	if(dtm_diag_count < 1000 && text.GetLen() > 1)
 	{
 		bool dtm_has_arabic = false;
 		const tjs_char *dmp = text.c_str();

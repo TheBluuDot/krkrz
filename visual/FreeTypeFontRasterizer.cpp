@@ -251,7 +251,7 @@ bool FreeTypeFontRasterizer::ShapeText( const ttstr & text, std::vector<tTVPShap
 
 	static int shape_diag_count = 0;
 	bool shape_diag = false;
-	if(shape_diag_count < 25)
+	if(shape_diag_count < 1000)
 	{
 		shape_diag_count += 1;
 		shape_diag = true;

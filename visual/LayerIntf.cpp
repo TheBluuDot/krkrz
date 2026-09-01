@@ -4020,7 +4020,7 @@ void tTJSNI_BaseLayer::DrawText(tjs_int x, tjs_int y, const ttstr &text,
 	// draw text
 	if(!MainImage) TVPThrowExceptionMessage(TVPNotDrawableLayerType);
 	static int dt_diag_count = 0;
-	if(dt_diag_count < 30 && text.GetLen() > 0)
+	if(dt_diag_count < 1000 && text.GetLen() > 0)
 	{
 		dt_diag_count++;
 		TVPAddLog(ttstr(TJS_W("[dt-diag] BaseLayer::DrawText len=") + ttstr((tjs_int)text.GetLen()) + TJS_W(" face=") + Font.Face));
@@ -7060,7 +7060,7 @@ TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/drawText)
 	if(numparams < 4) return TJS_E_BADPARAMCOUNT;
 	{
 		static int dtn_count = 0;
-		if(dtn_count < 30)
+		if(dtn_count < 1000)
 		{
 			dtn_count++;
 			ttstr dttmp;
