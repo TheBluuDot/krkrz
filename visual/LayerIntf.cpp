@@ -7069,6 +7069,13 @@ TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/drawText)
 			TVPAddLog(ttstr(TJS_W("[dt-diag] native drawText method len=") + ttstr((tjs_int)dttmp.GetLen()) + TJS_W(" first=") + firstch));
 		}
 	}
+	if(numparams >= 12 && param[11]->Type() == tvtString)
+	{
+		// forced face override: write the NI font struct directly so the
+		// draw cannot fall back to a stale or duck-typed font object
+		_this->SetFontFace(*param[11]);
+		TVPAddLog(ttstr(TJS_W("[dt-diag] forced face applied: ") + _this->GetFontFace()));
+	}
 	_this->DrawText(
 		*param[0],
 		*param[1],
