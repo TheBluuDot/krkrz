@@ -1453,7 +1453,7 @@ void tTVPNativeBaseBitmap::DrawTextMultiple(const tTVPRect &destrect,
 		if(dtm_has_arabic)
 		{
 			dtm_diag_count++;
-			TVPAddLog(ttstr(TJS_W("[dt-diag] DrawTextMultiple len=") + ttstr((tjs_int)text.GetLen())));
+			TVPAddLog(ttstr(TJS_W("[dt-diag] DrawTextMultiple len=") + ttstr((tjs_int)text.GetLen()) + TJS_W(" opa=") + ttstr((tjs_int)opa) + TJS_W(" angle=") + ttstr((tjs_int)Font.Angle)));
 		}
 	}
 
