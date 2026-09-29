@@ -1470,6 +1470,15 @@ void tTVPNativeBaseBitmap::DrawTextMultiple(const tTVPRect &destrect,
 
 	if(opa == 0) return; // nothing to do
 
+	{
+		static int dtm2_count = 0;
+		if(dtm2_count < 60)
+		{
+			dtm2_count++;
+			TVPAddLog(ttstr(TJS_W("[dt-diag] DTM raster=") + ttstr((tjs_int)TVPGetFontRasterizer()) + TJS_W(" len=") + ttstr((tjs_int)text.GetLen())));
+		}
+	}
+
 	Independ();
 
 	ApplyFont();
