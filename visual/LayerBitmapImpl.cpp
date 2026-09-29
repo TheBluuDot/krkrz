@@ -63,7 +63,7 @@ enum {
 static FontRasterizer* TVPFontRasterizers[FONT_RASTER_EOT];
 static bool TVPFontRasterizersInit = false;
 //static tjs_int TVPCurrentFontRasterizers = FONT_RASTER_FREE_TYPE;
-static tjs_int TVPCurrentFontRasterizers = FONT_RASTER_GDI;
+static tjs_int TVPCurrentFontRasterizers = FONT_RASTER_FREE_TYPE;
 void TVPInializeFontRasterizers() {
 	if( TVPFontRasterizersInit == false ) {
 		TVPFontRasterizers[FONT_RASTER_FREE_TYPE] = new FreeTypeFontRasterizer();
